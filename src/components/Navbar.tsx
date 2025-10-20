@@ -1,15 +1,23 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { BookOpen, Menu, X, Search, User, ShoppingCart, Heart } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { BookOpen, Menu, X, Search, User, ShoppingCart, Heart, LogOut } from 'lucide-react';
 import { useShoppingContext } from '../contexts/ShoppingContext';
+import { useAuth } from '../contexts/AuthContext';
 import { Cart } from './Cart';
 import { Wishlist } from './Wishlist';
 
 export const Navbar: React.FC = () => {
+  const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isWishlistOpen, setIsWishlistOpen] = useState(false);
   const { cartCount, wishlistCount } = useShoppingContext();
+  const { user, signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
 
   return (
     <header className="glass-card sticky top-4 mx-4 mt-4 z-50 backdrop-blur-md">
@@ -68,10 +76,17 @@ export const Navbar: React.FC = () => {
                 aria-hidden="true"
               ></Link>
             </div>
-            <Link to="/signin" className="glass-button flex items-center gap-2">
-              <User className="w-4 h-4" />
-              <span>Sign In</span>
-            </Link>
+            {user ? (
+              <button onClick={handleSignOut} className="glass-button flex items-center gap-2">
+                <LogOut className="w-4 h-4" />
+                <span>Sign Out</span>
+              </button>
+            ) : (
+              <Link to="/signin" className="glass-button flex items-center gap-2">
+                <User className="w-4 h-4" />
+                <span>Sign In</span>
+              </Link>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -93,10 +108,17 @@ export const Navbar: React.FC = () => {
             <Link to="/about" className="block py-2 hover:text-accent-primary transition-colors">About</Link>
             <Link to="/contact" className="block py-2 hover:text-accent-primary transition-colors">Contact</Link>
             <div className="flex items-center justify-between pt-2 border-t border-white/10">
-              <Link to="/signin" className="glass-button mt-2 flex items-center gap-2">
-                <User className="w-4 h-4" />
-                <span>Sign In</span>
-              </Link>
+              {user ? (
+                <button onClick={handleSignOut} className="glass-button mt-2 flex items-center gap-2">
+                  <LogOut className="w-4 h-4" />
+                  <span>Sign Out</span>
+                </button>
+              ) : (
+                <Link to="/signin" className="glass-button mt-2 flex items-center gap-2">
+                  <User className="w-4 h-4" />
+                  <span>Sign In</span>
+                </Link>
+              )}
               <div className="flex gap-4">
                 <button aria-label="Search" className="p-2 hover:text-accent-primary transition-colors">
                   <Search className="w-5 h-5" />

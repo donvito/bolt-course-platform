@@ -245,8 +245,7 @@ export const CourseDetailPage: React.FC = () => {
             </div>
             
             <div className="space-y-3 mb-6">
-              <button 
-                className 
+              <button
                 onClick={handleAddToCart}
                 disabled={inCart}
                 className={`w-full glass-button bg-gradient-to-r from-accent-primary to-accent-secondary text-white border-0 py-3 font-medium flex items-center justify-center gap-2 ${inCart ? 'opacity-80' : ''}`}

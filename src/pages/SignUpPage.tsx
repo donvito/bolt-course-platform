@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { User, Lock, Eye, EyeOff, AlertCircle, Mail, Check, Info, Github } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 interface FormData {
   fullName: string;
@@ -20,6 +21,9 @@ interface FormErrors {
 }
 
 export const SignUpPage: React.FC = () => {
+  const navigate = useNavigate();
+  const { signUp } = useAuth();
+
   const [formData, setFormData] = useState<FormData>({
     fullName: '',
     email: '',
@@ -27,7 +31,7 @@ export const SignUpPage: React.FC = () => {
     confirmPassword: '',
     agreeToTerms: false,
   });
-  
+
   const [errors, setErrors] = useState<FormErrors>({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -92,24 +96,21 @@ export const SignUpPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
-    
+
     setIsLoading(true);
-    
+
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // For demo purposes, just console log the form data
-      console.log('Form submitted:', formData);
-      
-      // Here you would typically:
-      // 1. Call your registration API
-      // 2. Show success message or redirect to verification page
-      
-      setFormSubmitted(true);
-      
+      const { error } = await signUp(formData.email, formData.password, formData.fullName);
+
+      if (error) {
+        setErrors({
+          general: error.message || 'Failed to create account. Please try again later.'
+        });
+      } else {
+        navigate('/');
+      }
     } catch (error) {
       console.error('Registration error:', error);
       setErrors({

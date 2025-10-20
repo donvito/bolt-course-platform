@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { User, Lock, Eye, EyeOff, AlertCircle, Mail, Facebook, Github } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 interface FormData {
   email: string;
@@ -15,12 +16,15 @@ interface FormErrors {
 }
 
 export const SignInPage: React.FC = () => {
+  const navigate = useNavigate();
+  const { signIn } = useAuth();
+
   const [formData, setFormData] = useState<FormData>({
     email: '',
     password: '',
     rememberMe: false,
   });
-  
+
   const [errors, setErrors] = useState<FormErrors>({});
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -66,30 +70,21 @@ export const SignInPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
-    
+
     setIsLoading(true);
-    
+
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // For demo purposes, just console log the form data
-      console.log('Form submitted:', formData);
-      
-      // Here you would typically:
-      // 1. Call your authentication API
-      // 2. Store the token in localStorage or secure cookie
-      // 3. Redirect the user to the dashboard or home page
-      
-      // Reset form (just for demo)
-      setFormData({
-        email: '',
-        password: '',
-        rememberMe: false,
-      });
-      
+      const { error } = await signIn(formData.email, formData.password);
+
+      if (error) {
+        setErrors({
+          general: error.message || 'Failed to sign in. Please check your credentials and try again.'
+        });
+      } else {
+        navigate('/');
+      }
     } catch (error) {
       console.error('Login error:', error);
       setErrors({
