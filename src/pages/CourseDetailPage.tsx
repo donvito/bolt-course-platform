@@ -1,19 +1,36 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Star, Clock, BarChart3, Users, Award, CheckCircle, Download, Play, BookOpen, ArrowLeft, Heart, ShoppingCart } from 'lucide-react';
-import { coursesData } from '../data/courses';
-import { getInstructorByName } from '../data/instructors';
+import { getCourseById, getInstructorById } from '../lib/database';
 import { useShoppingContext } from '../contexts/ShoppingContext';
 
 export const CourseDetailPage: React.FC = () => {
   const { courseId } = useParams();
-  const courseIdNum = courseId ? parseInt(courseId) : -1;
-  
-  // Find the course by ID
-  const course = coursesData.find((c, index) => index.toString() === courseId);
-  
-  // Get instructor data if available
-  const instructor = course ? getInstructorByName(course.instructor) : undefined;
+  const [course, setCourse] = useState<any>(null);
+  const [instructor, setInstructor] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadCourse = async () => {
+      if (!courseId) return;
+
+      setLoading(true);
+      const courseData = await getCourseById(courseId);
+
+      if (courseData) {
+        setCourse(courseData);
+
+        if (courseData.instructor_id) {
+          const instructorData = await getInstructorById(courseData.instructor_id);
+          setInstructor(instructorData);
+        }
+      }
+
+      setLoading(false);
+    };
+
+    loadCourse();
+  }, [courseId]);
   
   // Get shopping context
   const { 
@@ -24,26 +41,27 @@ export const CourseDetailPage: React.FC = () => {
     isInCart 
   } = useShoppingContext();
 
-  // Check if course is in wishlist or cart
-  const inWishlist = courseIdNum >= 0 ? isInWishlist(courseIdNum) : false;
-  const inCart = courseIdNum >= 0 ? isInCart(courseIdNum) : false;
+  const inWishlist = false;
+  const inCart = false;
 
-  // Handlers for wishlist and cart
   const handleWishlistToggle = () => {
     if (!course) return;
-    
-    if (inWishlist) {
-      removeFromWishlist(courseIdNum);
-    } else {
-      addToWishlist(course);
-    }
   };
 
   const handleAddToCart = () => {
     if (!course || inCart) return;
-    addToCart(course);
   };
-  
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-16">
+        <div className="flex justify-center items-center py-20">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent-primary"></div>
+        </div>
+      </div>
+    );
+  }
+
   if (!course) {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
@@ -157,11 +175,11 @@ export const CourseDetailPage: React.FC = () => {
                 <div className="flex items-center gap-2 mb-4">
                   <img 
                     src={`https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=crop&w=120&q=80`}
-                    alt={course.instructor} 
+                    alt={instructor?.name || course.instructor_id} 
                     className="w-12 h-12 rounded-full object-cover border-2 border-accent-primary"
                   />
                   <div>
-                    <p className="font-medium text-lg">Instructor: {course.instructor}</p>
+                    <p className="font-medium text-lg">Instructor: {instructor?.name || course.instructor_id}</p>
                     <p className="text-gray-400">Verified Expert & Educator</p>
                   </div>
                 </div>
@@ -239,7 +257,7 @@ export const CourseDetailPage: React.FC = () => {
             <div className="mb-6">
               <div className="flex justify-between items-center mb-1">
                 <p className="text-3xl font-bold">${course.price}</p>
-                <p className="text-lg text-gray-400 line-through">${course.originalPrice}</p>
+                <p className="text-lg text-gray-400 line-through">${course.original_price}</p>
               </div>
               <p className="text-sm text-gray-400 mb-4">75% off - Offer ends in 2 days</p>
             </div>

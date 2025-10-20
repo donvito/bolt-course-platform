@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Star, Clock, ArrowRight, BarChart3, Play, Heart, ShoppingCart } from 'lucide-react';
 import { PreviewCourse } from './PreviewCourse';
-import { coursesData } from '../data/courses';
+import { getCourses, Course } from '../lib/database';
 import { useShoppingContext } from '../contexts/ShoppingContext';
 
 interface CourseCardProps {
@@ -40,13 +40,11 @@ const CourseCard: React.FC<CourseCardProps> = ({
   const handleAddToWishlist = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    addToWishlist(coursesData[courseIdNum]);
   };
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    addToCart(coursesData[courseIdNum]);
   };
 
   return (
@@ -129,6 +127,19 @@ const CourseCard: React.FC<CourseCardProps> = ({
 
 export const FeaturedCourses: React.FC = () => {
   const [previewCourse, setPreviewCourse] = useState<any>(null);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadCourses = async () => {
+      setLoading(true);
+      const data = await getCourses();
+      setCourses(data.slice(0, 4));
+      setLoading(false);
+    };
+
+    loadCourses();
+  }, []);
 
   return (
     <section id="courses" className="py-16">
@@ -146,17 +157,31 @@ export const FeaturedCourses: React.FC = () => {
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {coursesData.map((course, index) => (
-            <CourseCard 
-              key={index} 
-              courseId={index.toString()}
-              {...course} 
-              onPreview={() => setPreviewCourse(course)}
-            />
-          ))}
-        </div>
+
+        {loading ? (
+          <div className="flex justify-center items-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent-primary"></div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {courses.map((course) => (
+              <CourseCard
+                key={course.id}
+                courseId={course.id}
+                title={course.title}
+                category={course.category}
+                image={course.image}
+                instructor={course.instructor_id}
+                rating={course.rating}
+                hours={course.hours}
+                level={course.level}
+                price={course.price}
+                originalPrice={course.original_price}
+                onPreview={() => setPreviewCourse(course)}
+              />
+            ))}
+          </div>
+        )}
         
         <div className="mt-10 text-center md:hidden">
           <Link to="/courses" className="glass-button inline-flex items-center gap-2">

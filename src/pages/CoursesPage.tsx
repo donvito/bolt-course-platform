@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  Search, Filter, LayoutGrid, List, Star, Clock, 
+import {
+  Search, Filter, LayoutGrid, List, Star, Clock,
   BarChart3, ChevronDown, X, SlidersHorizontal, ArrowUpDown
 } from 'lucide-react';
-import { coursesData } from '../data/courses';
+import { getCourses, Course } from '../lib/database';
 
 type ViewMode = 'grid' | 'list';
 type SortOption = 'popular' | 'newest' | 'price-low' | 'price-high' | 'rating';
@@ -17,6 +17,8 @@ interface CourseFilters {
 }
 
 export const CoursesPage: React.FC = () => {
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [showFilters, setShowFilters] = useState(false);
   const [showSortDropdown, setShowSortDropdown] = useState(false);
@@ -27,6 +29,17 @@ export const CoursesPage: React.FC = () => {
     priceRange: [0, 500],
     searchTerm: '',
   });
+
+  useEffect(() => {
+    const loadCourses = async () => {
+      setLoading(true);
+      const data = await getCourses();
+      setCourses(data);
+      setLoading(false);
+    };
+
+    loadCourses();
+  }, []);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -44,11 +57,11 @@ export const CoursesPage: React.FC = () => {
   }, [showSortDropdown]);
 
   // Extract unique categories and levels from courses
-  const categories = Array.from(new Set(coursesData.map(course => course.category)));
-  const levels = Array.from(new Set(coursesData.map(course => course.level)));
+  const categories = Array.from(new Set(courses.map(course => course.category)));
+  const levels = Array.from(new Set(courses.map(course => course.level)));
 
   // Filter and sort courses
-  const filteredCourses = coursesData.filter(course => {
+  const filteredCourses = courses.filter(course => {
     // Filter by category
     if (filters.category && course.category !== filters.category) return false;
     
@@ -264,7 +277,7 @@ export const CoursesPage: React.FC = () => {
                     <label htmlFor="category-all">All Categories</label>
                   </div>
                   {categories.map((category, index) => (
-                    <div key={index} className="flex items-center">
+                    <div key={course.id} className="flex items-center">
                       <input
                         type="radio"
                         id={`category-${index}`}
@@ -295,7 +308,7 @@ export const CoursesPage: React.FC = () => {
                     <label htmlFor="level-all">All Levels</label>
                   </div>
                   {levels.map((level, index) => (
-                    <div key={index} className="flex items-center">
+                    <div key={course.id} className="flex items-center">
                       <input
                         type="radio"
                         id={`level-${index}`}
@@ -380,13 +393,20 @@ export const CoursesPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Loading State */}
+      {loading && (
+        <div className="flex justify-center items-center py-20">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent-primary"></div>
+        </div>
+      )}
+
       {/* Courses - Grid View */}
-      {viewMode === 'grid' && (
+      {!loading && viewMode === 'grid' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {sortedCourses.map((course, index) => (
-            <div key={index} className="glass-card overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-xl">
+          {sortedCourses.map((course) => (
+            <div key={course.id} className="glass-card overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-xl">
               <div className="relative">
-                <Link to={`/courses/${index}`}>
+                <Link to={`/courses/${course.id}`}>
                   <img src={course.image} alt={course.title} className="w-full h-48 object-cover" />
                 </Link>
                 <div className="absolute top-3 left-3 bg-accent-primary/90 text-white text-xs px-2 py-1 rounded-full">
@@ -394,10 +414,10 @@ export const CoursesPage: React.FC = () => {
                 </div>
               </div>
               <div className="p-5 space-y-3">
-                <Link to={`/courses/${index}`} className="block">
+                <Link to={`/courses/${course.id}`} className="block">
                   <h3 className="font-bold text-lg hover:text-accent-primary transition-colors">{course.title}</h3>
                 </Link>
-                <p className="text-sm text-gray-400">by {course.instructor}</p>
+                <p className="text-sm text-gray-400">by {course.instructor_id}</p>
                 
                 <div className="flex items-center gap-1">
                   <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
@@ -419,10 +439,10 @@ export const CoursesPage: React.FC = () => {
                 <div className="pt-2 border-t border-white/10 flex justify-between items-center">
                   <div>
                     <p className="font-bold text-lg">${course.price}</p>
-                    <p className="text-sm text-gray-400 line-through">${course.originalPrice}</p>
+                    <p className="text-sm text-gray-400 line-through">${course.original_price}</p>
                   </div>
                   <Link
-                    to={`/courses/${index}`}
+                    to={`/courses/${course.id}`}
                     className="glass-button text-sm bg-gradient-to-r from-accent-primary to-accent-secondary text-white border-0"
                   >
                     Enroll
@@ -435,11 +455,11 @@ export const CoursesPage: React.FC = () => {
       )}
 
       {/* Courses - List View */}
-      {viewMode === 'list' && (
+      {!loading && viewMode === 'list' && (
         <div className="space-y-6">
-          {sortedCourses.map((course, index) => (
-            <div key={index} className="glass-card p-4 flex flex-col md:flex-row gap-4 hover:shadow-lg transition-shadow">
-              <Link to={`/courses/${index}`} className="md:w-1/4">
+          {sortedCourses.map((course) => (
+            <div key={course.id} className="glass-card p-4 flex flex-col md:flex-row gap-4 hover:shadow-lg transition-shadow">
+              <Link to={`/courses/${course.id}`} className="md:w-1/4">
                 <div className="relative">
                   <img 
                     src={course.image} 
@@ -454,16 +474,16 @@ export const CoursesPage: React.FC = () => {
               <div className="md:w-3/4">
                 <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-3 mb-2">
                   <div>
-                    <Link to={`/courses/${index}`} className="block">
+                    <Link to={`/courses/${course.id}`} className="block">
                       <h3 className="text-xl font-bold mb-1 hover:text-accent-primary transition-colors">
                         {course.title}
                       </h3>
                     </Link>
-                    <p className="text-sm text-gray-400 mb-2">by {course.instructor}</p>
+                    <p className="text-sm text-gray-400 mb-2">by {course.instructor_id}</p>
                   </div>
                   <div className="flex flex-col items-start md:items-end">
                     <div className="font-bold text-lg">${course.price}</div>
-                    <div className="text-sm text-gray-400 line-through">${course.originalPrice}</div>
+                    <div className="text-sm text-gray-400 line-through">${course.original_price}</div>
                   </div>
                 </div>
                 
@@ -489,7 +509,7 @@ export const CoursesPage: React.FC = () => {
                   </div>
                   
                   <Link 
-                    to={`/courses/${index}`}
+                    to={`/courses/${course.id}`}
                     className="glass-button text-sm bg-gradient-to-r from-accent-primary to-accent-secondary text-white border-0 mt-4 md:mt-0"
                   >
                     View Course
