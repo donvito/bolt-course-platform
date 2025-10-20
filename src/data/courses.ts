@@ -1,6 +1,6 @@
 export const coursesData = [
   {
-    title: "Web Development Bootcamp",
+    title: "Web Development AAA",
     category: "Development",
     image: "https://images.unsplash.com/photo-1593720213428-28a5b9e94613?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
     instructor: "Sarah Johnson",
